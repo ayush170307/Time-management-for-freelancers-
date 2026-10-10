@@ -25,6 +25,8 @@ There's also a small deadline checker running in the background. Every 30 second
 
 You can register as many freelancers and clients as you want. Emails are validated, and the same email can't be registered twice.
 
+Every account has a password. You create one when you register (and confirm it), and you log in with your email and password. Passwords are never stored as plain text. They're salted and hashed with PBKDF2, which comes built into Java, so no extra libraries are needed.
+
 ## What you need
 
 - A JDK, version 17 or newer. Make sure it's a full JDK and not just a JRE, because you need `javac`. You can check by running `javac -version`.
@@ -65,11 +67,11 @@ The first time you run it, a file called `freelancer_db.mv.db` gets created in t
 
 If you're not sure where to start, this is a good first walkthrough:
 
-1. Register one freelancer and one client from the home screen.
+1. Register one freelancer and one client from the home screen. You'll pick a password for each (at least 6 characters).
 2. Log in as the freelancer and create a project for that client (Projects tab, then New Project).
 3. Go to the Time Tracking tab, start the timer, wait a few seconds, and stop it.
 4. Go to Invoices, pick the project, choose hourly or fixed, enter a rate or amount, and generate the invoice.
-5. Log out, log back in as the client, and you should see the invoice, the project, and any messages.
+5. Log out, then log back in as the client using their email and password, and you should see the invoice, the project, and any messages.
 
 ## How the code is organised
 
@@ -78,9 +80,9 @@ Everything lives in one package called `app`. Roughly:
 - **Screens:** `MainApp` starts things up, `MainFrame` is the window, and `HomePanel`, `FreelancerDashboardPanel` and `ClientDashboardPanel` are the actual screens.
 - **Model classes:** `User` is an abstract class that `Freelancer` and `Client` extend. `Invoice` is also abstract, with `HourlyInvoice` and `FixedPriceInvoice` underneath it. Then there are `Project`, `TimeEntry` and `Message`.
 - **Database classes:** `DBConnection` handles the JDBC connection and creates the tables. There's a generic `Dao<T>` interface, a `BaseDao` with the shared JDBC code, and one DAO per table (`UserDao`, `ProjectDao`, `TimeEntryDao`, `InvoiceDao`, `MessageDao`).
-- **Everything else:** `BillingService` has the rules for logging time and creating invoices, `StopwatchThread` and `DeadlineMonitor` are the two background threads, `Validator` checks user input, and `Ui` has a few small helper methods.
+- **Everything else:** `BillingService` has the rules for logging time and creating invoices, `StopwatchThread` and `DeadlineMonitor` are the two background threads, `Validator` checks user input, `PasswordUtil` hashes and checks passwords, and `Ui` has a few small helper methods.
 
-The database has five tables: `users`, `projects`, `time_entries`, `invoices` and `messages`. They're created automatically on startup, so there's no setup script to run.
+The database has five tables: `users` (including the password hash), `projects`, `time_entries`, `invoices` and `messages`. They're created automatically on startup, so there's no setup script to run.
 
 ## Java concepts used
 
@@ -88,6 +90,7 @@ Since this is a course project, here's where the main concepts show up:
 
 - **Inheritance and polymorphism:** `Freelancer` and `Client` extend `User`, and both invoice types extend `Invoice`. Each invoice type calculates its total differently by overriding `calculateTotal()`.
 - **Interfaces and abstract classes:** `Billable`, `Closable`, and the generic `Dao<T>` are interfaces. `User` and `Invoice` are abstract.
+- **Security basics:** passwords are salted and hashed (PBKDF2), compared in constant time, and the login error message is the same whether the email or the password was wrong.
 - **Exception handling:** I made two custom checked exceptions, `InvalidInputException` for bad user input and `DatabaseException` for anything that goes wrong with the database.
 - **Collections and generics:** lists, `Optional`, an `EnumMap` for the project summary, and the generic DAO classes.
 - **Multithreading and synchronization:** the stopwatch thread uses a synchronized counter, the deadline monitor polls in the background, and invoice generation is locked so two threads can't create an invoice at the same time.
@@ -109,6 +112,7 @@ You'll need to create the `freelancer_db` database yourself first, and put the M
 
 These are the problems I ran into while setting this up, so hopefully they save you some time.
 
+- **Updating from an older version of the project:** the users table now has a password column. Delete the old `freelancer_db.mv.db` file once so the database gets recreated, then register your accounts again.
 - **`javac` not found:** you probably have a JRE instead of a JDK, or it isn't on your PATH.
 - **`Invalid filename: app\*.java`:** you're in the wrong folder. Make sure you're in the folder that directly contains `app` and `lib`, not inside `app` itself.
 - **"Startup failed" or "No suitable driver" when the app opens:** the H2 jar is missing from `lib`, or the classpath is missing `lib/*`.
