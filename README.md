@@ -15,13 +15,31 @@ It's built with Java Swing for the interface and plain JDBC for the database. No
 - Generate invoices. You can bill hourly (hours worked x your rate) or charge a fixed price for the whole project.
 - Send messages to your clients.
 
-There's also a small deadline checker running in the background. Every 30 seconds it looks at your projects and shows a warning at the top of your dashboard if anything is overdue or due within 3 days.
+Every table has a live search box, and you can click a column header to sort it. Double-click an invoice to see its details, or export it as a text receipt. The overview page shows your hours per project and how much of your invoicing has been paid, as simple charts.
+
+There's a **leaderboard** that ranks every freelancer by the hours they've logged, with a podium for the top three and a switch between "this week" and "all time". Clients can see it too, which helps when choosing who to work with.
+
+The interface is animated: pages fade in, the numbers on the overview count up, the charts and leaderboard bars grow into place, and buttons fade smoothly when you hover over them. Cards have smooth rounded corners with a soft blurred shadow.
+
+A background thread checks the database every 15 seconds. It shows a warning on the overview page and pops up an alert when a project is due within 48 hours or overdue, and it tells freelancers when a client marks an invoice as paid (and tells clients when a new invoice arrives).
+
+A few more things worth knowing:
+
+- **Invoices from logged time.** Pick a project and a date range (or press "This month"), and the hours in that period are added up for you before you generate the invoice. Nothing has to be typed by hand except the rate.
+- **PDF invoices.** "Export Invoice" saves a styled PDF with the freelancer, client, project, breakdown and total (or a plain text receipt if you prefer). I wrote a tiny PDF generator myself, so there's no extra library to download.
+- **Reports.** Export your timesheet or an earnings report as CSV, which opens straight in Excel.
+- **Messaging.** Freelancers and clients can write to each other. There is an inbox and a sent list, timestamps, read receipts ("Delivered" turns into "Read 14:05" once the other person opens it), and a red unread counter on the sidebar.
+- **System tray.** If a timer is running and you close or minimise the window, the app hides in the system tray instead of quitting, so the timer keeps going. Double-click the tray icon to bring it back.
+- **Dark mode.** There is a Light mode / Dark mode button in the sidebar and on the login screen. The choice is remembered next time you open the app.
+- **Safer forms.** The register form checks the email, password length and password match as you type, and the amount and hour fields simply won't accept letters or negative numbers.
+- **Access checks.** Every page change and every sensitive action checks the logged-in user's role, so a client can't reach freelancer screens and nobody can change another person's data.
 
 **As a client** you can:
 
 - See all the invoices you've received, look one up by its number, and mark it as paid.
 - Check the status of your projects, with a quick summary of how many are finished.
 - Read messages from your freelancer.
+- Export any invoice as a text receipt, and see a paid-versus-pending chart on the overview page.
 
 You can register as many freelancers and clients as you want. Emails are validated, and the same email can't be registered twice.
 
@@ -77,10 +95,10 @@ If you're not sure where to start, this is a good first walkthrough:
 
 Everything lives in one package called `app`. Roughly:
 
-- **Screens:** `MainApp` starts things up, `MainFrame` is the window, and `HomePanel`, `FreelancerDashboardPanel` and `ClientDashboardPanel` are the actual screens.
+- **Screens:** `MainApp` starts things up, `MainFrame` is the window, and `HomePanel`, `FreelancerDashboardPanel` and `ClientDashboardPanel` are the actual screens. Both dashboards share a sidebar layout from `DashboardShell`, and `Theme` and `RoundedButton` hold the colours, fonts and custom-painted buttons so the whole app looks consistent.
 - **Model classes:** `User` is an abstract class that `Freelancer` and `Client` extend. `Invoice` is also abstract, with `HourlyInvoice` and `FixedPriceInvoice` underneath it. Then there are `Project`, `TimeEntry` and `Message`.
 - **Database classes:** `DBConnection` handles the JDBC connection and creates the tables. There's a generic `Dao<T>` interface, a `BaseDao` with the shared JDBC code, and one DAO per table (`UserDao`, `ProjectDao`, `TimeEntryDao`, `InvoiceDao`, `MessageDao`).
-- **Everything else:** `BillingService` has the rules for logging time and creating invoices, `StopwatchThread` and `DeadlineMonitor` are the two background threads, `Validator` checks user input, `PasswordUtil` hashes and checks passwords, and `Ui` has a few small helper methods.
+- **Everything else:** `BillingService` has the rules for logging time and creating invoices, `StopwatchThread` and `DeadlineMonitor` are the two background threads, `Session` and `AccessDeniedException` enforce who can do what, `SimplePdf` writes the PDF invoices, `ReportExporter` writes the CSV reports, `ActivityMonitor` is the background alert thread, `TrayManager` handles the system tray, `MessagesPage` is the two-way inbox, `Badge` and `EmptyState` draw the status pills and the empty-screen graphics, `StyledComboBoxUI` and `ThinScrollBarUI` restyle dropdowns and scroll bars, `LeaderboardService`, `LeaderboardPage` and `LeaderboardPanel` build and draw the ranking, `Animator` drives all the animations (with `AnimatedNumberLabel` for the counting numbers), `RoundedPanel` draws the blurred-shadow cards, `InvoiceExporter` saves receipts to a file, `BarChartPanel` and `DonutChartPanel` draw the charts, `ToastGlassPane` shows the small fading notifications, `Validator` checks user input, `PasswordUtil` hashes and checks passwords, and `Ui` has a few small helper methods.
 
 The database has five tables: `users` (including the password hash), `projects`, `time_entries`, `invoices` and `messages`. They're created automatically on startup, so there's no setup script to run.
 
@@ -90,10 +108,11 @@ Since this is a course project, here's where the main concepts show up:
 
 - **Inheritance and polymorphism:** `Freelancer` and `Client` extend `User`, and both invoice types extend `Invoice`. Each invoice type calculates its total differently by overriding `calculateTotal()`.
 - **Interfaces and abstract classes:** `Billable`, `Closable`, and the generic `Dao<T>` are interfaces. `User` and `Invoice` are abstract.
-- **Security basics:** passwords are salted and hashed (PBKDF2), compared in constant time, and the login error message is the same whether the email or the password was wrong.
+- **Security basics:** passwords are salted and hashed (PBKDF2, which ships with Java; BCrypt would need an extra library), compared in constant time, and the login error message is the same whether the email or the password was wrong. A `Session` class checks the user's role on every page change and before every sensitive action.
 - **Exception handling:** I made two custom checked exceptions, `InvalidInputException` for bad user input and `DatabaseException` for anything that goes wrong with the database.
-- **Collections and generics:** lists, `Optional`, an `EnumMap` for the project summary, and the generic DAO classes.
+- **Collections and generics:** lists, `Optional`, an `EnumMap` for the project summary, a `LinkedHashMap` plus a custom comparator for the leaderboard, and the generic DAO classes.
 - **Multithreading and synchronization:** the stopwatch thread uses a synchronized counter, the deadline monitor polls in the background, and invoice generation is locked so two threads can't create an invoice at the same time.
+- **Why plain JDBC and not Hibernate:** the course marks JDBC connectivity and database classes directly, so I kept a hand-written DAO layer. It is still easy to move to MySQL (see below).
 - **JDBC:** prepared statements, joins, generated keys, and try-with-resources for closing connections.
 
 ## Using MySQL instead
@@ -112,7 +131,8 @@ You'll need to create the `freelancer_db` database yourself first, and put the M
 
 These are the problems I ran into while setting this up, so hopefully they save you some time.
 
-- **Updating from an older version of the project:** the users table now has a password column. Delete the old `freelancer_db.mv.db` file once so the database gets recreated, then register your accounts again.
+- **Messages table:** older databases get the new `read_at` column added automatically on start-up, so you do not need to delete anything for read receipts.
+- **Updating from a very old version of the project:** the users table now has a password column. Delete the old `freelancer_db.mv.db` file once so the database gets recreated, then register your accounts again.
 - **`javac` not found:** you probably have a JRE instead of a JDK, or it isn't on your PATH.
 - **`Invalid filename: app\*.java`:** you're in the wrong folder. Make sure you're in the folder that directly contains `app` and `lib`, not inside `app` itself.
 - **"Startup failed" or "No suitable driver" when the app opens:** the H2 jar is missing from `lib`, or the classpath is missing `lib/*`.
