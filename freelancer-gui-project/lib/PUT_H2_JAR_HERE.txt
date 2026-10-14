@@ -1,0 +1,4 @@
+Download the H2 database jar (single file, e.g. h2-2.2.224.jar) from
+https://h2database.com/html/download.html  (Platform-Independent Zip -> bin/h2-*.jar)
+or from Maven Central: com.h2database:h2
+and place it in this lib folder.

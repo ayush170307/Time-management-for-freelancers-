@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Time Management for Freelancers - live demo</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="profile">
+      <div class="avatar">S</div>
+      <div><div class="pname">Sara Ahmed</div><div class="prole">FREELANCER (DEMO)</div></div>
+    </div>
+    <nav id="nav">
+      <button class="nav-btn active" data-page="overview">Overview</button>
+      <button class="nav-btn" data-page="time">Time Tracking</button>
+      <button class="nav-btn" data-page="projects">Projects</button>
+      <button class="nav-btn" data-page="invoices">Invoices</button>
+      <button class="nav-btn" data-page="leaderboard">Leaderboard</button>
+      <button class="nav-btn" data-page="messages">Messages <span id="msgBadge" class="count" hidden></span></button>
+    </nav>
+    <div class="side-bottom">
+      <button class="nav-btn" id="themeBtn">Dark mode</button>
+      <a class="nav-btn link" href="https://github.com/ayush170307" target="_blank" rel="noopener">View source on GitHub</a>
+    </div>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <h1 id="pageTitle">Overview</h1>
+      <span class="tag">Interactive demo with sample data. Nothing is saved to a server.</span>
+    </header>
+
+    <!-- ============ Overview ============ -->
+    <section class="page active" id="page-overview">
+      <div class="banner"><h2 id="greeting">Hello</h2><p id="today"></p></div>
+      <div class="grid3">
+        <div class="card"><div class="label">HOURS LOGGED</div><div class="big c-primary" id="statHours">0.00</div></div>
+        <div class="card"><div class="label">ACTIVE PROJECTS</div><div class="big c-warn" id="statProjects">0</div></div>
+        <div class="card"><div class="label">PENDING INVOICE AMOUNT</div><div class="big c-ok" id="statPending">0.00</div></div>
+      </div>
+      <div class="card"><div class="label">DEADLINES AND ALERTS</div><div id="alerts" class="alerts"></div></div>
+      <div class="grid2">
+        <div class="card"><div class="label">HOURS BY PROJECT</div><div class="bars" id="barChart"></div></div>
+        <div class="card"><div class="label">INVOICES: PAID VS PENDING</div>
+          <div class="donut-wrap">
+            <svg viewBox="0 0 120 120" class="donut" aria-hidden="true">
+              <circle cx="60" cy="60" r="46" class="ring"></circle>
+              <circle cx="60" cy="60" r="46" class="seg seg-paid" id="segPaid"></circle>
+              <circle cx="60" cy="60" r="46" class="seg seg-pend" id="segPend"></circle>
+              <text x="60" y="64" text-anchor="middle" id="donutPct">0%</text>
+            </svg>
+            <div id="donutLegend" class="legend"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ Time ============ -->
+    <section class="page" id="page-time">
+      <div class="card timer-card">
+        <div class="timer" id="timerDisplay">00:00:00</div>
+        <div class="controls">
+          <div class="row"><select id="timeProject"></select>
+            <button class="btn primary" id="startBtn">Start Timer</button>
+            <button class="btn danger" id="stopBtn" disabled>Stop &amp; Save</button></div>
+          <div class="row"><span class="muted">Or add hours manually:</span>
+            <input id="manualHours" inputmode="decimal" size="5" placeholder="1.5">
+            <button class="btn" id="addManual">Add Entry</button></div>
+        </div>
+      </div>
+      <div class="toolbar"><button class="btn" id="exportTime">Export Timesheet (CSV)</button></div>
+      <div class="card"><input class="search" id="timeSearch" placeholder="Search this table..."><div id="timeTable"></div></div>
+    </section>
+
+    <!-- ============ Projects ============ -->
+    <section class="page" id="page-projects">
+      <div class="card"><input class="search" id="projectSearch" placeholder="Search this table..."><div id="projectTable"></div></div>
+    </section>
+
+    <!-- ============ Invoices ============ -->
+    <section class="page" id="page-invoices">
+      <div class="card form">
+        <div class="field"><label>PROJECT</label><select id="invProject"></select></div>
+        <div class="field"><label>TYPE</label><select id="invType"><option>HOURLY</option><option>FIXED</option></select></div>
+        <div class="field"><label>RATE / AMOUNT</label><input id="invRate" inputmode="decimal" size="7" placeholder="40"></div>
+        <div class="field"><label>FROM</label><input type="date" id="invFrom"></div>
+        <div class="field"><label>TO</label><input type="date" id="invTo"></div>
+        <div class="field"><label>HOURS IN PERIOD</label><div class="preview" id="invPreview">-</div></div>
+        <div class="field"><label>&nbsp;</label><button class="btn primary" id="invGenerate">Generate &amp; Send</button></div>
+      </div>
+      <div class="toolbar"><button class="btn" id="exportInv">Export Earnings (CSV)</button>
+        <span class="muted">Click a column header to sort.</span></div>
+      <div class="card"><input class="search" id="invSearch" placeholder="Search this table..."><div id="invTable"></div></div>
+    </section>
+
+    <!-- ============ Leaderboard ============ -->
+    <section class="page" id="page-leaderboard">
+      <div class="card lb-head">
+        <div><div class="lb-title" id="lbSummary"></div><div class="muted" id="lbDetail"></div></div>
+        <div class="seg-toggle"><button class="btn active" id="lbWeek">This week</button><button class="btn" id="lbAll">All time</button></div>
+      </div>
+      <div class="card"><div id="podium" class="podium"></div><div id="lbList"></div></div>
+    </section>
+
+    <!-- ============ Messages ============ -->
+    <section class="page" id="page-messages">
+      <div class="card form">
+        <div class="field"><label>TO</label><select id="msgTo"><option>Acme Corp</option><option>Bright Studio</option></select></div>
+        <div class="field grow"><label>MESSAGE</label><input id="msgText" placeholder="Write a message..."></div>
+        <div class="field"><label>&nbsp;</label><button class="btn primary" id="msgSend">Send</button></div>
+      </div>
+      <div class="toolbar seg-toggle"><button class="btn active" id="tabInbox">Inbox</button><button class="btn" id="tabSent">Sent</button></div>
+      <div class="card"><div id="msgList"></div></div>
+    </section>
+  </main>
+</div>
+<div id="toast" class="toast" role="status"></div>
+<script src="app.js"></script>
+</body>
+</html>
