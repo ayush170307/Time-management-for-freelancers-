@@ -91,6 +91,28 @@ If you're not sure where to start, this is a good first walkthrough:
 4. Go to Invoices, pick the project, choose hourly or fixed, enter a rate or amount, and generate the invoice.
 5. Log out, then log back in as the client using their email and password, and you should see the invoice, the project, and any messages.
 
+## What is in the repository
+
+- `app/` holds all the Java source (package `app`).
+- `lib/` is where you put the H2 jar.
+- `database/schema.sql` is the full database schema, with a few example queries. It works on H2 and MySQL.
+- `docs/` is a **working browser version of the app** (`index.html`, `style.css`, `app.js`). It runs on sample data, with the timer, charts, invoices, leaderboard, messages and dark mode. Publish it with GitHub Pages (Settings, Pages, deploy from the `main` branch and the `/docs` folder) and anyone can try the app without installing Java.
+- `database/sample_data.sql` holds demo accounts, projects, logged time, invoices and messages. `scripts/make_demo_data.py` generates it.
+- `compile_and_run.bat` (Windows) and `run.sh` (Mac and Linux) compile and start the app for you.
+
+## Trying it with demo data
+
+If you don't want to type in data by hand, load the demo data once:
+
+1. Run the app once so it creates the tables, then close it (the database file can only be open in one place).
+2. Load the file (replace the jar name with yours):
+   ```
+   java -cp "lib/h2-2.2.224.jar" org.h2.tools.RunScript -url jdbc:h2:./freelancer_db -user sa -script database/sample_data.sql
+   ```
+3. Start the app and log in with `sara@example.com` (a freelancer) or `acme@example.com` (a client). Every demo account uses the password `demo1234`.
+
+To make fresh demo data with today's dates, run `python scripts/make_demo_data.py`.
+
 ## How the code is organised
 
 Everything lives in one package called `app`. Roughly:
