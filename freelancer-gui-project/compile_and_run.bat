@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 REM Run this from the project folder (the one that contains "app" and "lib").
 javac -cp "lib/*" app\*.java
 if errorlevel 1 (
